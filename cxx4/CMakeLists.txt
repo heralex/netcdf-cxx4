@@ -6,6 +6,20 @@
 file(GLOB CXX_HEADERS *.h)
 file(GLOB CXX_SOURCES nc*.cpp)
 
+
+include_directories(netcdf-cxx4 SYSTEM PUBLIC 
+    "${HDF5_INCLUDE_DIRS}"
+    ${NETCDF_C_INCLUDE_DIR}
+    "/usr/lib/x86_64-linux-gnu/openmpi/include"
+    ${MPI_CXX_INCLUDE_DIRS}
+)
+
+
+link_directories(netcdf-cxx4
+    ${HDF5_LINK_DIR}
+)
+
+
 ###
 # Set up tests.
 ###
@@ -24,6 +38,8 @@ IF(NCXX_ENABLE_TESTS)
 
 ENDIF()
 
+MESSAGE(STATUS "HDF_C_LIBRARY_hdf5=${HDF5_C_LIBRARY_hdf5}")
+
 SET(ALL_TLL_LIBS ${HDF5_C_LIBRARY_hdf5})
 SET(ALL_TLL_LIBS ${ALL_TLL_LIBS} ${EXTRA_DEPS} PARENT_SCOPE)
 
@@ -33,10 +49,19 @@ add_library(netCDF::netcdf-cxx4 ALIAS netcdf-cxx4)
 TARGET_INCLUDE_DIRECTORIES(netcdf-cxx4 PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:include>
-  )
-TARGET_LINK_LIBRARIES(netcdf-cxx4 PUBLIC netCDF::netcdf)
-TARGET_LINK_LIBRARIES(netcdf-cxx4 PUBLIC ${ALL_TLL_LIBS})
-target_include_directories(netcdf-cxx4 SYSTEM PUBLIC "${HDF5_INCLUDE_DIRS}")
+
+)
+
+TARGET_LINK_LIBRARIES(netcdf-cxx4 PUBLIC 
+    netcdf_mpi
+)
+
+TARGET_LINK_LIBRARIES(netcdf-cxx4 PUBLIC 
+    ${ALL_TLL_LIBS}
+    ${HDF5_C_LIBRARIES}
+    ${MPI_CXX_LIBRARIES}
+)
+
 
 SET_TARGET_PROPERTIES(netcdf-cxx4 PROPERTIES
   VERSION ${NCXX_LIB_VERSION}
