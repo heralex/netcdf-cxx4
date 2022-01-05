@@ -121,7 +121,7 @@ EXECUTE_PROCESS(
   OUTPUT_VARIABLE CONFIG_DATE
   )
 IF(CONFIG_DATE)
-	string(STRIP ${CONFIG_DATE} CONFIG_DATE)
+        string(STRIP ${CONFIG_DATE} CONFIG_DATE)
 ENDIF()
 
 # Check to see if we have bash.
@@ -344,36 +344,52 @@ MARK_AS_ADVANCED(NCXX_CTEST_PROJECT_NAME
 # Seek out dependent libraries.
 ################################
 
+###
+# Add prepend user-defined search path to look
+# for parallel netCDF CMake configuration file;
+# udseful for parallel installations of serial and 
+# parallel netCDF
+###
+
+SET(PARALLEL_NC_CONFIG_PATH "/usr/lib/x86_64-linux-gnu/cmake/netCDF_mpi" CACHE STRING "Path to parallel netCDF CMake configuration file.")
+LIST(PREPEND CMAKE_MODULE_PATH "${PARALLEL_NC_CONFIG_PATH}")
+SET(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 ###
 # Find NetCDF
 ###
-IF(NOT netCDF_LIBRARIES AND NOT netCDF_INCLUDE_DIR)
-  FIND_PACKAGE(netCDF QUIET)
-ELSE()
-  SET(netCDF_FOUND TRUE)
-ENDIF()
 
-IF (netCDF_FOUND)
-  SET(NETCDF_C_LIBRARY ${netCDF_LIBRARIES})
-  SET(NETCDF_C_INCLUDE_DIR ${netCDF_INCLUDE_DIR})
-  message(STATUS "Found netCDF CMake package: ${NETCDF_C_LIBRARY}")
-ELSE()
-  # netCDF not properly packaged. Try to find it manually.
-  FIND_LIBRARY(NETCDF_C_LIBRARY NAMES netcdf libnetcdf)
-  IF(NOT NETCDF_C_LIBRARY)
-    MESSAGE(FATAL_ERROR "libnetcdf not found. Please reinstall and try again.")
-  ELSE()
-    FIND_PATH(NETCDF_C_INCLUDE_DIR "netcdf.h")
-    MESSAGE(STATUS "Found netcdf: ${NETCDF_C_LIBRARY}")
-    IF(NOT NETCDF_C_INCLUDE_DIR)
-      MESSAGE(FATAL_ERROR "Directory containing netcdf.h cannot be found. Please reinstall and try again.")
-    ELSE()
-      GET_FILENAME_COMPONENT(netCDF_LIB_DIR "${NETCDF_C_LIBRARY}" REALPATH)
-      INCLUDE_DIRECTORIES(SYSTEM ${NC_H_INCLUDE_DIR})
-    ENDIF()
-  ENDIF()
-ENDIF()
+SET(NETCDF_C_LIBRARY "netcdf_mpi")
+SET(NETCDF_C_INCLUDE_DIR "/usr/lib/x86_64-linux-gnu/netcdf/mpi/include")
+
+SET(netCDF_FOUND TRUE)
+
+# IF(NOT netCDF_LIBRARIES AND NOT netCDF_INCLUDE_DIR)
+#   FIND_PACKAGE(netCDF QUIET)
+# ELSE()
+#   SET(netCDF_FOUND TRUE)
+# ENDIF()
+# 
+# IF (netCDF_FOUND)
+#   SET(NETCDF_C_LIBRARY ${netCDF_LIBRARIES})
+#   SET(NETCDF_C_INCLUDE_DIR ${netCDF_INCLUDE_DIR})
+#   message(STATUS "Found netCDF CMake package: ${NETCDF_C_LIBRARY}")
+# ELSE()
+#   # netCDF not properly packaged. Try to find it manually.
+#   FIND_LIBRARY(NETCDF_C_LIBRARY NAMES netcdf libnetcdf)
+#   IF(NOT NETCDF_C_LIBRARY)
+#     MESSAGE(FATAL_ERROR "libnetcdf not found. Please reinstall and try again.")
+#   ELSE()
+#     FIND_PATH(NETCDF_C_INCLUDE_DIR "netcdf.h")
+#     MESSAGE(STATUS "Found netcdf: ${NETCDF_C_LIBRARY}")
+#     IF(NOT NETCDF_C_INCLUDE_DIR)
+#       MESSAGE(FATAL_ERROR "Directory containing netcdf.h cannot be found. Please reinstall and try again.")
+#     ELSE()
+#       GET_FILENAME_COMPONENT(netCDF_LIB_DIR "${NETCDF_C_LIBRARY}" REALPATH)
+#       INCLUDE_DIRECTORIES(SYSTEM ${NC_H_INCLUDE_DIR})
+#     ENDIF()
+#   ENDIF()
+# ENDIF()
 
 
 if (NOT TARGET netCDF::netcdf)
@@ -392,6 +408,11 @@ IF(NC_IS_PARALLEL)
   SET(BUILD_PARALLEL ${NC_IS_PARALLEL} CACHE STRING "")
 ENDIF()
 
+MESSAGE(STATUS "NETCDF_C_INCLUDE_DIR=${NETCDF_C_INCLUDE_DIR}")
+MESSAGE(STATUS "NETCDF_C_LIBRARY=${NETCDF_C_LIBRARY}")
+MESSAGE(STATUS "NC_IS_PARALELL=${NC_IS_PARALLEL}")
+MESSAGE(STATUS "BUILD_PARALELL=${BUILD_PARALLEL}")
+
 ###
 # Check to see if netcdf-c was built with plugin support.
 ###
@@ -403,18 +424,39 @@ ENDIF(NC_HAS_DEF_VAR_FILTER)
 ###
 # Find HDF5
 ###
-IF(MSVC)
-  SET(SEARCH_PACKAGE_NAME ${HDF5_PACKAGE_NAME})
-  FIND_PACKAGE(HDF5 NAMES ${SEARCH_PACKAGE_NAME} COMPONENTS C HL NO_MODULES REQUIRED ${NC_HDF5_LINK_TYPE})
-ELSE(MSVC)
-  FIND_PACKAGE(HDF5 COMPONENTS C HL REQUIRED)
-ENDIF(MSVC)
+# IF(MSVC)
+#   SET(SEARCH_PACKAGE_NAME ${HDF5_PACKAGE_NAME})
+#   FIND_PACKAGE(HDF5 NAMES ${SEARCH_PACKAGE_NAME} COMPONENTS C HL NO_MODULES REQUIRED ${NC_HDF5_LINK_TYPE})
+# ELSE(MSVC)
+#   FIND_PACKAGE(HDF5 COMPONENTS C HL REQUIRED)
+# ENDIF(MSVC)
+
+SET(HDF5_C_LIBRARIES hdf5)
+SET(HDF5_INCLUDE_DIRS "/usr/lib/x86_64-linux-gnu/hdf5/openmpi/include")
+SET(HDF5_LINK_DIR "/usr/lib/x86_64-linux-gnu/hdf5/openmpi")
 
 CHECK_LIBRARY_EXISTS(${HDF5_C_LIBRARIES} H5free_memory "" HAVE_H5FREE_MEMORY)
 IF(NOT HAVE_H5FREE_MEMORY)
   MESSAGE(STATUS "Plugin support requires libhdf5 with H5Free support. Your libhdf5 install does not provide H5Free.  Please install a newer version of libhdf5 if you require plugin compression support.")
   SET(NC_HAS_DEF_VAR_FILTER "")
 ENDIF()
+
+
+###
+# FIND MPI
+###
+
+find_package(MPI)
+if (MPI_CXX_FOUND)
+    message(STATUS "MPI_CXX: found version: ${MPI_CXX_VERSION}")
+    message(STATUS "MPI_CXX_INCLUDE_DIRS=${MPI_CXX_INCLUDE_DIRS}")
+    message(STATUS "MPI_CXX_LIBRARIES=${MPI_CXX_LIBRARIES}")
+    message(STATUS "MPI_CXX_COMPILER=${MPI_CXX_COMPILER}")
+    message(STATUS "MPI_C_COMPILER=${MPI_C_COMPILER}")
+else ()
+    set(MPI_CXX_INCLUDE_DIRS "MPI_CXX_INCLUDE_DIRS-NOTFOUND" CACHE STRING "Please specify the MPI-CXX include directories!")
+    set(MPI_CXX_LIBRARIES "MPI_CXX_LIBRARIES-NOTFOUND" CACHE STRING "Please specify the MPI-CXX libraries!")
+endif()
 
 ################################
 # End 'seek out dependent libraries'
