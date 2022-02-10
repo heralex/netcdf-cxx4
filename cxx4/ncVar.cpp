@@ -31,6 +31,7 @@ NcVar& NcVar::operator=(const NcVar & rhs)
   nullObject = rhs.nullObject;
   myId = rhs.myId;
   groupId = rhs.groupId;
+  parallelIOMode = rhs.parallelIOMode;
   return *this;
 }
 
@@ -38,7 +39,8 @@ NcVar& NcVar::operator=(const NcVar & rhs)
 NcVar::NcVar(const NcVar& rhs) :
   nullObject(rhs.nullObject),
   myId(rhs.myId),
-  groupId(rhs.groupId)
+  groupId(rhs.groupId),
+  parallelIOMode(rhs.parallelIOMode)
 {}
 
 
@@ -64,7 +66,8 @@ bool NcVar::operator!=(const NcVar & rhs) const
 // Constructor generates a null object.
 NcVar::NcVar() : nullObject(true),
                  myId(-1),
-                 groupId(-1)
+                 groupId(-1),
+                 parallelIOMode(nc_Independent)
 {}
 
 // Constructor for a variable (must already exist in the netCDF file.)
@@ -556,6 +559,30 @@ void NcVar::getChunkingParameters(ChunkMode& chunkMode, vector<size_t>& chunkSiz
 }
 
 
+////////////////////
+
+// parallel I/O details
+
+////////////////////
+
+
+void NcVar::DoCollectiveIO(const bool bCollectiveIO)
+{
+    const int iomode = bCollectiveIO ? NC_COLLECTIVE : NC_INDEPENDENT;
+    ncCheck(nc_var_par_access(groupId, myId, iomode), __FILE__, __LINE__);
+    switch(iomode)
+    {
+    case NC_COLLECTIVE: parallelIOMode = nc_Collective; break;
+    case NC_INDEPENDENT:
+    default: parallelIOMode = nc_Independent; break;
+    }
+}
+
+bool NcVar::DoCollectiveIO(void)
+{
+    DoCollectiveIO(true);
+    return parallelIOMode;
+}
 
 
 ////////////////////
@@ -605,9 +632,9 @@ void NcVar::setCompression(bool enableShuffleFilter, bool enableDeflateFilter, i
     throw NcException("The deflateLevel must be set between 0 and 9.",__FILE__,__LINE__);
 
   ncCheck(nc_def_var_deflate(groupId,myId,
-			     static_cast<int> (enableShuffleFilter),
-			     static_cast<int> (enableDeflateFilter),
-			     deflateLevel),__FILE__,__LINE__);
+                             static_cast<int> (enableShuffleFilter),
+                             static_cast<int> (enableDeflateFilter),
+                             deflateLevel),__FILE__,__LINE__);
 }
 
 // Gets the compression parameters
@@ -616,9 +643,9 @@ void NcVar::getCompressionParameters(bool& shuffleFilterEnabled, bool& deflateFi
   int enableShuffleFilterInt;
   int enableDeflateFilterInt;
   ncCheck(nc_inq_var_deflate(groupId,myId,
-			     &enableShuffleFilterInt,
-			     &enableDeflateFilterInt,
-			     &deflateLevel),__FILE__,__LINE__);
+                             &enableShuffleFilterInt,
+                             &enableDeflateFilterInt,
+                             &deflateLevel),__FILE__,__LINE__);
   shuffleFilterEnabled =  static_cast<bool> (enableShuffleFilterInt);
   deflateFilterEnabled =  static_cast<bool> (enableDeflateFilterInt);
 }

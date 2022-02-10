@@ -6,11 +6,12 @@
 file(GLOB CXX_HEADERS *.h)
 file(GLOB CXX_SOURCES nc*.cpp)
 
+message(STATUS "cxx4: >>> NETCDF_C_INCLUDE_DIR=${NETCDF_C_INCLUDE_DIR}")
+
 
 include_directories(netcdf-cxx4 SYSTEM PUBLIC 
     "${HDF5_INCLUDE_DIRS}"
     ${NETCDF_C_INCLUDE_DIR}
-    "/usr/lib/x86_64-linux-gnu/openmpi/include"
     ${MPI_CXX_INCLUDE_DIRS}
 )
 
@@ -38,10 +39,11 @@ IF(NCXX_ENABLE_TESTS)
 
 ENDIF()
 
-MESSAGE(STATUS "HDF_C_LIBRARY_hdf5=${HDF5_C_LIBRARY_hdf5}")
+MESSAGE(STATUS "HDF5_C_LIBRARIES=${HDF5_C_LIBRARIES}")
+message(STATUS "netCDF_LIBRARIES=${netCDF_LIBRARIES}")
 
-SET(ALL_TLL_LIBS ${HDF5_C_LIBRARY_hdf5})
-SET(ALL_TLL_LIBS ${ALL_TLL_LIBS} ${EXTRA_DEPS} PARENT_SCOPE)
+#SET(ALL_TLL_LIBS ${HDF5_C_LIBRARY_hdf5})
+SET(ALL_TLL_LIBS ${ALL_TLL_LIBS} ${EXTRA_DEPS} ${HDF5_C_LIBRARIES} PARENT_SCOPE)
 
 ADD_LIBRARY(netcdf-cxx4 ${CXX_SOURCES})
 add_library(netCDF::netcdf-cxx4 ALIAS netcdf-cxx4)
@@ -52,14 +54,14 @@ TARGET_INCLUDE_DIRECTORIES(netcdf-cxx4 PUBLIC
 
 )
 
-TARGET_LINK_LIBRARIES(netcdf-cxx4 PUBLIC 
-    netcdf_mpi
+target_link_directories(netcdf-cxx4 PUBLIC
+    ${HDF5_ROOT_DIR}
 )
 
 TARGET_LINK_LIBRARIES(netcdf-cxx4 PUBLIC 
     ${ALL_TLL_LIBS}
-    ${HDF5_C_LIBRARIES}
     ${MPI_CXX_LIBRARIES}
+    ${netCDF_LIBRARIES}
 )
 
 

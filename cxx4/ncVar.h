@@ -4,6 +4,7 @@
 #include <map>
 #include <vector>
 #include "netcdf.h"
+#include "netcdf_par.h"
 #include "ncVarAtt.h"
 #include "ncGroup.h"
 #include "ncByte.h"
@@ -37,9 +38,9 @@ namespace netCDF
     /*! Used for chunking specifications (see NcVar::setChunking,  NcVar::getChunkingParameters). */
     enum ChunkMode
       {
-	/*!
-	  Chunked storage is used for this variable.
-	*/
+        /*!
+          Chunked storage is used for this variable.
+        */
         nc_CHUNKED    = NC_CHUNKED,
         /*! Contiguous storage is used for this variable. Variables with one or more unlimited
           dimensions cannot use contiguous storage. If contiguous storage is turned on, the
@@ -53,9 +54,9 @@ namespace netCDF
     */
     enum EndianMode
       {
-	nc_ENDIAN_NATIVE = NC_ENDIAN_NATIVE, //!< Native endian.
-	nc_ENDIAN_LITTLE = NC_ENDIAN_LITTLE, //!< Little endian.
-	nc_ENDIAN_BIG    = NC_ENDIAN_BIG     //!< Big endian.
+        nc_ENDIAN_NATIVE = NC_ENDIAN_NATIVE, //!< Native endian.
+        nc_ENDIAN_LITTLE = NC_ENDIAN_LITTLE, //!< Little endian.
+        nc_ENDIAN_BIG    = NC_ENDIAN_BIG     //!< Big endian.
       };
 
     /*! Used for checksum specification (see NcVar::setChecksum, NcVar::getChecksum). */
@@ -63,7 +64,15 @@ namespace netCDF
     {
       nc_NOCHECKSUM = NC_NOCHECKSUM, //!< No checksum (the default).
       nc_FLETCHER32 = NC_FLETCHER32  //!< Selects the Fletcher32 checksum filter.
-      };
+    };
+
+
+    /*! Used for controlling parallel I/O access. */
+    enum ParallelIOMode
+    {
+        nc_Independent = NC_INDEPENDENT,
+        nc_Collective  = NC_COLLECTIVE
+    };
 
     /*! destructor */
     ~NcVar(){};
@@ -304,7 +313,7 @@ namespace netCDF
     template<class T>
       void setFill(bool fillMode, T fillValue) const
       {
-	ncCheck(nc_def_var_fill(groupId,myId,static_cast<int> (!fillMode),&fillValue),__FILE__,__LINE__);
+        ncCheck(nc_def_var_fill(groupId,myId,static_cast<int> (!fillMode),&fillValue),__FILE__,__LINE__);
       }
 
 
@@ -392,6 +401,20 @@ namespace netCDF
       \return ChecksumMode Enumeration type. Allowable parameters are: "nc_NOCHECKSUM", "nc_FLETCHER32".
     */
     ChecksumMode getChecksum() const;
+
+
+    ////////////////////
+
+    // parallel I/O details
+
+    ////////////////////
+
+
+    void DoCollectiveIO(const bool bCollectiveIO);
+
+    bool DoCollectiveIO(void);
+
+    ParallelIOMode getParallelIOMode(void) {return parallelIOMode;}
 
 
 
@@ -1140,6 +1163,8 @@ namespace netCDF
     int myId;
 
     int groupId;
+
+    ParallelIOMode parallelIOMode;
 
   };
 

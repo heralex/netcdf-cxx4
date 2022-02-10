@@ -3,6 +3,12 @@
 # for the netcdf-cxx4 `examples` directory.
 ################################################
 
+include_directories( 
+    "${HDF5_INCLUDE_DIRS}"
+    ${NETCDF_C_INCLUDE_DIR}
+    ${MPI_CXX_INCLUDE_DIRS}
+)
+
 IF(NCXX_ENABLE_TESTS)
 
   add_bin_test(examples simple_xy_wr)
