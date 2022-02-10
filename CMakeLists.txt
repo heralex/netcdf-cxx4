@@ -7,6 +7,8 @@
 #Minimum required CMake Version
 cmake_minimum_required(VERSION 2.8.12)
 
+cmake_policy(SET CMP0074 NEW)
+
 #Project Name
 PROJECT(NCXX C CXX)
 set(PACKAGE "netcdf-cxx4" CACHE STRING "")
@@ -347,50 +349,64 @@ MARK_AS_ADVANCED(NCXX_CTEST_PROJECT_NAME
 ###
 # Add prepend user-defined search path to look
 # for parallel netCDF CMake configuration file;
-# udseful for parallel installations of serial and 
+# udseful for parallel installations of serial and
 # parallel netCDF
 ###
 
-SET(PARALLEL_NC_CONFIG_PATH "/usr/lib/x86_64-linux-gnu/cmake/netCDF_mpi" CACHE STRING "Path to parallel netCDF CMake configuration file.")
-LIST(PREPEND CMAKE_MODULE_PATH "${PARALLEL_NC_CONFIG_PATH}")
-SET(CMAKE_POSITION_INDEPENDENT_CODE ON)
+#SET(PARALLEL_NC_CONFIG_PATH "/opt/netcdf-c-4.8.1/install/bin" CACHE STRING "Path to parallel netcdf netCDFConfig.cmake file.")
+#LIST(PREPEND CMAKE_MODULE_PATH "${PARALLEL_NC_CONFIG_PATH}")
+#SET(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
+#execute_process(COMMAND ${PARALLEL_NC_CONFIG_PATH}/nc-config --version OUTPUT_VARIABLE NETCDF_VERSION_TEXT OUTPUT_STRIP_TRAILING_WHITESPACE)
+#execute_process(COMMAND ${PARALLEL_NC_CONFIG_PATH}/nc-config --includedir OUTPUT_VARIABLE NETCDF_C_INCLUDE_DIR OUTPUT_STRIP_TRAILING_WHITESPACE)
+#execute_process(COMMAND ${PARALLEL_NC_CONFIG_PATH}/nc-config --libdir OUTPUT_VARIABLE NETCDF_C_LIB_DIR OUTPUT_STRIP_TRAILING_WHITESPACE)
+#execute_process(COMMAND ${PARALLEL_NC_CONFIG_PATH}/nc-config --libs OUTPUT_VARIABLE NETCDF_LIBRARIES OUTPUT_STRIP_TRAILING_WHITESPACE)
 
 ###
 # Find NetCDF
 ###
 
-SET(NETCDF_C_LIBRARY "netcdf_mpi")
-SET(NETCDF_C_INCLUDE_DIR "/usr/lib/x86_64-linux-gnu/netcdf/mpi/include")
+#SET(NETCDF_C_LIBRARY "netcdf")
+#SET(NETCDF_C_INCLUDE_DIR "/opt/netcdf-c-4.8.1/install/include")
 
-SET(netCDF_FOUND TRUE)
+#message(STATUS "NETCDF_C_INCLUDE_DIR=${NETCDF_C_INCLUDE_DIR}")
+#message(STATUS "NETCDF_C_LIB_DIR=${NETCDF_C_LIB_DIR}")
+#message(STATUS "NETCDF_C_LIBRARY=${NETCDF_C_LIBRARY}")
 
-# IF(NOT netCDF_LIBRARIES AND NOT netCDF_INCLUDE_DIR)
-#   FIND_PACKAGE(netCDF QUIET)
-# ELSE()
-#   SET(netCDF_FOUND TRUE)
-# ENDIF()
-# 
-# IF (netCDF_FOUND)
-#   SET(NETCDF_C_LIBRARY ${netCDF_LIBRARIES})
-#   SET(NETCDF_C_INCLUDE_DIR ${netCDF_INCLUDE_DIR})
-#   message(STATUS "Found netCDF CMake package: ${NETCDF_C_LIBRARY}")
-# ELSE()
-#   # netCDF not properly packaged. Try to find it manually.
-#   FIND_LIBRARY(NETCDF_C_LIBRARY NAMES netcdf libnetcdf)
-#   IF(NOT NETCDF_C_LIBRARY)
-#     MESSAGE(FATAL_ERROR "libnetcdf not found. Please reinstall and try again.")
-#   ELSE()
-#     FIND_PATH(NETCDF_C_INCLUDE_DIR "netcdf.h")
-#     MESSAGE(STATUS "Found netcdf: ${NETCDF_C_LIBRARY}")
-#     IF(NOT NETCDF_C_INCLUDE_DIR)
-#       MESSAGE(FATAL_ERROR "Directory containing netcdf.h cannot be found. Please reinstall and try again.")
-#     ELSE()
-#       GET_FILENAME_COMPONENT(netCDF_LIB_DIR "${NETCDF_C_LIBRARY}" REALPATH)
-#       INCLUDE_DIRECTORIES(SYSTEM ${NC_H_INCLUDE_DIR})
-#     ENDIF()
-#   ENDIF()
-# ENDIF()
+#SET(netCDF_FOUND TRUE)
 
+IF(NOT netCDF_LIBRARIES AND NOT netCDF_INCLUDE_DIR)
+  FIND_PACKAGE(netCDF QUIET)
+ELSE()
+  SET(netCDF_FOUND TRUE)
+ENDIF()
+
+IF (netCDF_FOUND)
+  SET(NETCDF_C_LIBRARY ${netCDF_LIBRARIES})
+  SET(NETCDF_C_INCLUDE_DIR ${netCDF_INCLUDE_DIR})
+  message(STATUS "Found netCDF CMake package: ${NETCDF_C_LIBRARY}")
+ELSE()
+  # netCDF not properly packaged. Try to find it manually.
+  FIND_LIBRARY(NETCDF_C_LIBRARY NAMES netcdf libnetcdf)
+  IF(NOT NETCDF_C_LIBRARY)
+    MESSAGE(FATAL_ERROR "libnetcdf not found. Please reinstall and try again.")
+  ELSE()
+    FIND_PATH(NETCDF_C_INCLUDE_DIR "netcdf.h")
+    MESSAGE(STATUS "Found netcdf: ${NETCDF_C_LIBRARY}")
+    IF(NOT NETCDF_C_INCLUDE_DIR)
+      MESSAGE(FATAL_ERROR "Directory containing netcdf.h cannot be found. Please reinstall and try again.")
+    ELSE()
+      GET_FILENAME_COMPONENT(netCDF_LIB_DIR "${NETCDF_C_LIBRARY}" REALPATH)
+      INCLUDE_DIRECTORIES(SYSTEM ${NC_H_INCLUDE_DIR})
+   ENDIF()
+  ENDIF()
+ENDIF()
+
+SET(NETCDF_C_LIB_DIR ${netCDF_LIB_DIR})
+
+link_directories(
+    ${NETCDF_C_LIB_DIR}
+)
 
 if (NOT TARGET netCDF::netcdf)
   add_library(netCDF::netcdf UNKNOWN IMPORTED)
@@ -403,10 +419,16 @@ endif()
 ###
 # Check to see if netcdf-c was built with parallel.
 ###
-CHECK_LIBRARY_EXISTS(${NETCDF_C_LIBRARY} nc_use_parallel_enabled "" NC_IS_PARALLEL)
-IF(NC_IS_PARALLEL)
+#CHECK_LIBRARY_EXISTS(${NETCDF_C_LIBRARY} nc_use_parallel_enabled ${NETCDF_C_LIB_DIR} NC_IS_PARALLEL)
+
+#IF(NC_IS_PARALLEL)
+IF(netCDF_HAS_HDF5 AND netCDF_HAS_PARALLEL)
+  SET(NC_IS_PARALLEL yes)
   SET(BUILD_PARALLEL ${NC_IS_PARALLEL} CACHE STRING "")
 ENDIF()
+
+#SET(NC_IS_PARALLEL TRUE)
+#SET(BUILD_PARALLEL TRUE)
 
 MESSAGE(STATUS "NETCDF_C_INCLUDE_DIR=${NETCDF_C_INCLUDE_DIR}")
 MESSAGE(STATUS "NETCDF_C_LIBRARY=${NETCDF_C_LIBRARY}")
@@ -424,16 +446,16 @@ ENDIF(NC_HAS_DEF_VAR_FILTER)
 ###
 # Find HDF5
 ###
-# IF(MSVC)
-#   SET(SEARCH_PACKAGE_NAME ${HDF5_PACKAGE_NAME})
-#   FIND_PACKAGE(HDF5 NAMES ${SEARCH_PACKAGE_NAME} COMPONENTS C HL NO_MODULES REQUIRED ${NC_HDF5_LINK_TYPE})
-# ELSE(MSVC)
-#   FIND_PACKAGE(HDF5 COMPONENTS C HL REQUIRED)
-# ENDIF(MSVC)
+IF(MSVC)
+  SET(SEARCH_PACKAGE_NAME ${HDF5_PACKAGE_NAME})
+  FIND_PACKAGE(HDF5 NAMES ${SEARCH_PACKAGE_NAME} COMPONENTS C HL NO_MODULES REQUIRED ${NC_HDF5_LINK_TYPE})
+ELSE(MSVC)
+  FIND_PACKAGE(HDF5 COMPONENTS C HL REQUIRED)
+ENDIF(MSVC)
 
-SET(HDF5_C_LIBRARIES hdf5)
-SET(HDF5_INCLUDE_DIRS "/usr/lib/x86_64-linux-gnu/hdf5/openmpi/include")
-SET(HDF5_LINK_DIR "/usr/lib/x86_64-linux-gnu/hdf5/openmpi")
+#SET(HDF5_C_LIBRARIES hdf5)
+#SET(HDF5_INCLUDE_DIRS "/usr/lib/x86_64-linux-gnu/hdf5/openmpi/include")
+#SET(HDF5_LINK_DIR "/usr/lib/x86_64-linux-gnu/hdf5/openmpi")
 
 CHECK_LIBRARY_EXISTS(${HDF5_C_LIBRARIES} H5free_memory "" HAVE_H5FREE_MEMORY)
 IF(NOT HAVE_H5FREE_MEMORY)
