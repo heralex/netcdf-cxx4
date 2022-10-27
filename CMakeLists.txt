@@ -455,7 +455,7 @@ ENDIF(MSVC)
 
 #SET(HDF5_C_LIBRARIES hdf5)
 #SET(HDF5_INCLUDE_DIRS "/usr/lib/x86_64-linux-gnu/hdf5/openmpi/include")
-#SET(HDF5_LINK_DIR "/usr/lib/x86_64-linux-gnu/hdf5/openmpi")
+SET(HDF5_LINK_DIR "/usr/lib/x86_64-linux-gnu/hdf5/mpich")
 
 CHECK_LIBRARY_EXISTS(${HDF5_C_LIBRARIES} H5free_memory "" HAVE_H5FREE_MEMORY)
 IF(NOT HAVE_H5FREE_MEMORY)
@@ -656,7 +656,7 @@ INSTALL(
 # INCLUDE_DIRECTORIES(cxx4 examples)
 
 ADD_SUBDIRECTORY(cxx4)
-ADD_SUBDIRECTORY(examples)
+#ADD_SUBDIRECTORY(examples)
 IF(ENABLE_DOXYGEN)
   ADD_SUBDIRECTORY(docs)
 ENDIF()

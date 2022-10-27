@@ -7,6 +7,7 @@ file(GLOB CXX_HEADERS *.h)
 file(GLOB CXX_SOURCES nc*.cpp)
 
 message(STATUS "cxx4: >>> NETCDF_C_INCLUDE_DIR=${NETCDF_C_INCLUDE_DIR}")
+message(STATUS "cxx4: >>> NETCDF_C_LIBRARY=${NETCDF_C_LIBRARY}")
 
 
 include_directories(netcdf-cxx4 SYSTEM PUBLIC 
@@ -24,26 +25,33 @@ link_directories(netcdf-cxx4
 ###
 # Set up tests.
 ###
-IF(NCXX_ENABLE_TESTS)
 
-  add_bin_test(cxx4 test_classic)
-  add_bin_test(cxx4 test_group)
-  add_bin_test(cxx4 test_dim)
-  add_bin_test(cxx4 test_att)
-  add_bin_test(cxx4 test_var)
-  add_bin_test(cxx4 test_var2)
-  add_bin_test(cxx4 test_type)
-  add_bin_test(cxx4 test_open_close)
-  add_bin_test(cxx4 test_ncFile_Flags)
-  add_bin_test(cxx4 test_filter)
+SET(ALL_TLL_LIBS ${ALL_TLL_LIBS} ${EXTRA_DEPS} ${HDF5_C_LIBRARIES} ${netCDF_C_LIBRARIES})
 
-ENDIF()
+link_directories(
+    ${HDF5_ROOT}
+)
+
+#IF(NCXX_ENABLE_TESTS)
+#
+#  add_bin_test(cxx4 test_classic)
+#  add_bin_test(cxx4 test_group)
+#  add_bin_test(cxx4 test_dim)
+#  add_bin_test(cxx4 test_att)
+#  add_bin_test(cxx4 test_var)
+#  add_bin_test(cxx4 test_var2)
+#  add_bin_test(cxx4 test_type)
+#  add_bin_test(cxx4 test_open_close)
+#  add_bin_test(cxx4 test_ncFile_Flags)
+#  add_bin_test(cxx4 test_filter)
+#
+#ENDIF()
 
 MESSAGE(STATUS "HDF5_C_LIBRARIES=${HDF5_C_LIBRARIES}")
 message(STATUS "netCDF_LIBRARIES=${netCDF_LIBRARIES}")
 
 #SET(ALL_TLL_LIBS ${HDF5_C_LIBRARY_hdf5})
-SET(ALL_TLL_LIBS ${ALL_TLL_LIBS} ${EXTRA_DEPS} ${HDF5_C_LIBRARIES} PARENT_SCOPE)
+#SET(ALL_TLL_LIBS ${ALL_TLL_LIBS} ${EXTRA_DEPS} ${HDF5_C_LIBRARIES} PARENT_SCOPE)
 
 ADD_LIBRARY(netcdf-cxx4 ${CXX_SOURCES})
 add_library(netCDF::netcdf-cxx4 ALIAS netcdf-cxx4)
@@ -61,7 +69,7 @@ target_link_directories(netcdf-cxx4 PUBLIC
 TARGET_LINK_LIBRARIES(netcdf-cxx4 PUBLIC 
     ${ALL_TLL_LIBS}
     ${MPI_CXX_LIBRARIES}
-    ${netCDF_LIBRARIES}
+    #${netCDF_C_LIBRARIES}
 )
 
 
