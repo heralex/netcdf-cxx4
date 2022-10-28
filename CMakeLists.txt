@@ -455,11 +455,8 @@ ENDIF(MSVC)
 
 #SET(HDF5_C_LIBRARIES hdf5)
 #SET(HDF5_INCLUDE_DIRS "/usr/lib/x86_64-linux-gnu/hdf5/openmpi/include")
-<<<<<<< HEAD
+
 SET(HDF5_LINK_DIR "/usr/lib/x86_64-linux-gnu/hdf5/mpich")
-=======
-#SET(HDF5_LINK_DIR "/usr/lib/x86_64-linux-gnu/hdf5/openmpi")
->>>>>>> 14daa3d10fe14265cc49087b4a982082b903b889
 
 CHECK_LIBRARY_EXISTS(${HDF5_C_LIBRARIES} H5free_memory "" HAVE_H5FREE_MEMORY)
 IF(NOT HAVE_H5FREE_MEMORY)
